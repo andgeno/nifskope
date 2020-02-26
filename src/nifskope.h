@@ -157,6 +157,13 @@ public:
 
 	static void reloadTheme();
 
+    static void setupBatchExport(QString inNifValue, QString inObjValue);
+
+    static bool doBatchExport;
+    static QString nifValue;
+    static QString objValue;
+
+
 signals:
 	void beginLoading();
 	void completeLoading( bool, QString & );
@@ -236,6 +243,8 @@ protected slots:
 	void onLoadComplete( bool, QString & );
 	void onSaveComplete( bool, QString & );
 
+    void onLoadCompleteForBatchExport( bool, QString & );
+
 	//! Display a context menu at the specified position
 	void contextMenu( const QPoint & pos );
 
@@ -252,6 +261,7 @@ protected slots:
 	void fillImportExportMenus();
 	//! Perform Import or Export
 	void sltImportExport( QAction * action );
+    void exportObjToFile(QString objFilename);
 
 	//! Open a URL using the system handler
 	void openURL();

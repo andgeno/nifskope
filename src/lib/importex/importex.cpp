@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QModelIndex>
 
 
-void exportObj( const NifModel * nif, const QModelIndex & index );
+void exportObj( const NifModel * nif, const QModelIndex & index, QString objFilename );
 void exportCol( const NifModel * nif, QFileInfo );
 void importObj( NifModel * nif, const QModelIndex & index );
 void import3ds( NifModel * nif, const QModelIndex & index );
@@ -49,10 +49,31 @@ void import3ds( NifModel * nif, const QModelIndex & index );
 
 void NifSkope::fillImportExportMenus()
 {
-	mExport->addAction( tr( "Export .OBJ" ) );
+    mExport->addAction( tr( "Export .OBJ" ) )->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_E));
 	//mExport->addAction( tr( "Export .DAE" ) );
 	//mImport->addAction( tr( "Import .3DS" ) );
 	mImport->addAction( tr( "Import .OBJ" ) );
+}
+
+void NifSkope::exportObjToFile(QString objFilename) {
+    QModelIndex index;
+
+    //Get the currently selected NiBlock index in the list or tree view
+    if ( dList->isVisible() ) {
+        if ( list->model() == proxy ) {
+            index = proxy->mapTo( list->currentIndex() );
+        } else if ( list->model() == nif ) {
+            index = list->currentIndex();
+        }
+    } else if ( dTree->isVisible() ) {
+        if ( tree->model() == proxy ) {
+            index = proxy->mapTo( tree->currentIndex() );
+        } else if ( tree->model() == nif ) {
+            index = tree->currentIndex();
+        }
+    }
+
+    exportObj( nif, index, objFilename);
 }
 
 void NifSkope::sltImportExport( QAction * a )
@@ -89,7 +110,7 @@ void NifSkope::sltImportExport( QAction * a )
 	}
 
 	if ( a->text() == tr( "Export .OBJ" ) )
-		exportObj( nif, index );
+        exportObj( nif, index, nullptr);
 	else if ( a->text() == tr( "Import .OBJ" ) )
 		importObj( nif, index );
 	//else if ( a->text() == tr( "Import .3DS" ) )

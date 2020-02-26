@@ -83,6 +83,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SettingsDialog * NifSkope::options;
 
+bool NifSkope::doBatchExport = false;
+QString NifSkope::nifValue;
+QString NifSkope::objValue;
+
 const QList<QPair<QString, QString>> NifSkope::filetypes = {
 	// NIF types
 	{ "NIF", "nif" }, { "Bethesda Terrain", "btr" }, { "Bethesda Terrain Object", "bto" },
@@ -138,7 +142,7 @@ QString NifSkope::fileFilters( bool allFiles )
 NifSkope::NifSkope()
 	: QMainWindow(), ui( new Ui::MainWindow )
 {
-	// Init UI
+    // Init UI
 	ui->setupUi( this );
 
 	qApp->installEventFilter( this );
@@ -296,7 +300,7 @@ NifSkope::NifSkope()
 	graphicsView->setViewportUpdateMode( QGraphicsView::FullViewportUpdate );
 
 	// Set central widget and viewport
-	setCentralWidget( graphicsView );
+    setCentralWidget( graphicsView );
 	
 	setContextMenuPolicy( Qt::NoContextMenu );
 
@@ -325,7 +329,36 @@ NifSkope::NifSkope()
 	connect( options, &SettingsDialog::localeChanged, this, &NifSkope::sltLocaleChanged );
 
 	connect( qApp, &QApplication::lastWindowClosed, this, &NifSkope::exitRequested );
+
+    if(doBatchExport) {
+        connect( this, &NifSkope::completeLoading, this, &NifSkope::onLoadCompleteForBatchExport );
+        qInfo() << "Loading nif: [" << nifValue << "]";
+        loadFile(nifValue);
+    }
+
 }
+
+void NifSkope::onLoadCompleteForBatchExport( bool success, QString & fname ) {
+        if(!doBatchExport) {
+            return;
+        }
+
+        if ( nif && nif->getVersionNumber() >= 0x14050000 ) {
+            // NIF cannot be exported
+            return;
+        }
+
+        if ( !success ) {
+            // Something went wrong
+            return;
+        }
+        qInfo() << "Exporting obj: [" << objValue << "]";
+        exportObjToFile(objValue);
+
+        QApplication::quit();
+}
+
+
 
 void NifSkope::exitRequested()
 {
@@ -942,6 +975,13 @@ void NifSkope::openFiles( QStringList & files )
 	for ( const QString & file : files ) {
 		NifSkope::createWindow( file );
 	}
+}
+
+void NifSkope::setupBatchExport(QString inNifValue, QString inObjValue) {
+    doBatchExport = true;
+    nifValue = inNifValue;
+    objValue = inObjValue;
+//    qInfo() << "Batch export enabled";
 }
 
 void NifSkope::saveFile( const QString & filename )

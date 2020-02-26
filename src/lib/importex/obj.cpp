@@ -231,13 +231,13 @@ static void writeShape( const NifModel * nif, const QModelIndex & iShape, QTextS
 			QModelIndex iSource = nif->getBlock( nif->getLink( iProp, "Image" ), "NiImage" );
 			map_Kd = TexCache::find( nif->get<QString>( iSource, "File Name" ), nif->getFolder() );
 		} else if ( nif->isNiBlock( iProp, "NiSkinInstance" ) ) {
-			QMessageBox::warning(
-				0,
-				"OBJ Export Warning",
-				QString( "The shape " ) + name + QString( " is skinned, but the "
-					"obj format does not support skinning. This mesh will be "
-					"exported statically in its bind pose, without skin weights." )
-			);
+//            QMessageBox::warning(
+//				0,
+//				"OBJ Export Warning",
+//				QString( "The shape " ) + name + QString( " is skinned, but the "
+//					"obj format does not support skinning. This mesh will be "
+//					"exported statically in its bind pose, without skin weights." )
+//			);
 		} else if ( nif->isNiBlock( iProp, { "BSShaderNoLightingProperty", "SkyShaderProperty", "TileShaderProperty" } ) ) {
 			map_Kd = TexCache::find( nif->get<QString>( iProp, "File Name" ), nif->getFolder() );
 		} else if ( nif->isNiBlock( iProp, "BSEffectShaderProperty" ) ) {
@@ -278,7 +278,8 @@ static void writeShape( const NifModel * nif, const QModelIndex & iShape, QTextS
 		mtl << "map_Kd " << map_Kd << "\r\n";
 
 	if ( !map_Kn.isEmpty() )
-		mtl << "map_Kn " << map_Kn << "\r\n";
+        //mtl << "map_Kn " << map_Kn << "\r\n";
+        mtl << "map_bump " << map_Kn << "\r\n";
 
 	if ( !decal.isEmpty() )
 		mtl << "decal " << decal << "\r\n";
@@ -377,7 +378,7 @@ static void writeParent( const NifModel * nif, const QModelIndex & iNode, QTextS
 	}
 }
 
-void exportObj( const NifModel * nif, const QModelIndex & index )
+void exportObj( const NifModel * nif, const QModelIndex & index, QString objFilename )
 {
 	//objCulling = Options::get()->exportCullEnabled();
 	//objCullRegExp = Options::get()->cullExpression();
@@ -403,11 +404,15 @@ void exportObj( const NifModel * nif, const QModelIndex & index )
 		roots = nif->getRootLinks();
 	}
 
-	int result = QMessageBox::question( 0, tr( "Export OBJ" ), question, QMessageBox::Ok, QMessageBox::Cancel );
+    /*
+    if(objFilename == nullptr) {
+        int result = QMessageBox::question( 0, tr( "Export OBJ" ), question, QMessageBox::Ok, QMessageBox::Cancel );
 
-	if ( result == QMessageBox::Cancel ) {
-		return;
-	}
+        if ( result == QMessageBox::Cancel ) {
+            return;
+        }
+    }
+    */
 
 	//--Allow the user to select the file--//
 
@@ -415,7 +420,13 @@ void exportObj( const NifModel * nif, const QModelIndex & index )
 	settings.beginGroup( "Import-Export" );
 	settings.beginGroup( "OBJ" );
 
-	QString fname = QFileDialog::getSaveFileName( qApp->activeWindow(), tr( "Choose a .OBJ file for export" ), settings.value( "File Name" ).toString(), "OBJ (*.obj)" );
+    QString fname;
+
+    if(objFilename == nullptr) {
+        fname = QFileDialog::getSaveFileName( qApp->activeWindow(), tr( "Choose a .OBJ file for export" ), settings.value( "File Name" ).toString(), "OBJ (*.obj)" );
+    } else {
+        fname = objFilename;
+    }
 
 	if ( fname.isEmpty() )
 		return;

@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ***** END LICENCE BLOCK *****/
 
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+
 #include "nifskope.h"
 #include "version.h"
 #include "data/nifvalue.h"
@@ -45,6 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QUdpSocket>
 #include <QUrl>
 
+#include<QDebug>
 
 QCoreApplication * createApplication( int &argc, char *argv[] )
 {
@@ -55,7 +58,7 @@ QCoreApplication * createApplication( int &argc, char *argv[] )
 			return new QCoreApplication( argc, argv );
 		}
 	}
-	return new QApplication( argc, argv );
+    return new QApplication( argc, argv );
 }
 
 
@@ -72,9 +75,9 @@ int main( int argc, char * argv[] )
 
 		a->setOrganizationName( "NifTools" );
 		a->setOrganizationDomain( "niftools.org" );
-		a->setApplicationName( "NifSkope " + NifSkopeVersion::rawToMajMin( NIFSKOPE_VERSION ) );
+        a->setApplicationName( "NifSkope " + NifSkopeVersion::rawToMajMin( NIFSKOPE_VERSION ) );
 		a->setApplicationVersion( NIFSKOPE_VERSION );
-		a->setApplicationDisplayName( "NifSkope " + NifSkopeVersion::rawToDisplay( NIFSKOPE_VERSION, true ) );
+        a->setApplicationDisplayName( "NifSkope " + NifSkopeVersion::rawToDisplay( NIFSKOPE_VERSION, true ) + " [geno's Edition]" );
 
 		// Must set current directory or this causes issues with several features
 		QDir::setCurrent( qApp->applicationDirPath() );
@@ -107,8 +110,13 @@ int main( int argc, char * argv[] )
 		parser.addVersionOption();
 
 		// Add port option
-		QCommandLineOption portOption( {"p", "port"}, "Port NifSkope listens on", "port" );
+        QCommandLineOption portOption( {"p", "port"}, "Port NifSkope listens on", "port");
 		parser.addOption( portOption );
+
+        QCommandLineOption nifOption("nif", "NIF input file", "nifopt");
+        parser.addOption(nifOption);
+        QCommandLineOption objOption("obj", "OBJ output file", "objopt");
+        parser.addOption(objOption);
 
 		// Process options
 		parser.process( *a );
@@ -116,6 +124,13 @@ int main( int argc, char * argv[] )
 		// Override port value
 		if ( parser.isSet( portOption ) )
 			port = parser.value( portOption ).toInt();
+
+        if(parser.isSet(nifOption) && parser.isSet(objOption)) {
+            QString nifValue = parser.value(nifOption);
+            QString objValue = parser.value(objOption);
+            NifSkope::setupBatchExport(nifValue, objValue);
+        }
+
 
 		// Files were passed to NifSkope
 		for ( const QString & arg : parser.positionalArguments() ) {
